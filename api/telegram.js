@@ -18,24 +18,64 @@ export default async function handler(req, res) {
 
     if (!text) return res.status(200).json({ ok: true })
 
-    if (text === '/start' || text === '/menu' || text === '/help') {
-      await reply(
-        message.chat.id,
-        `🤖 Finance Tracker Bot
+    if (text === '/start') {
+  await reply(
+    message.chat.id,
+    `🤖 Selamat datang di Finance Tracker
 
-Format input:
+Bot ini membantu mencatat pemasukan & pengeluaran otomatis.
+
+📌 Contoh:
 +35000000 uang koperasi 14 Mei
 -500000 mingguan Dika 15 Mei
 
-Command:
-/saldo - Lihat saldo
-/help - Bantuan
+Ketik /help untuk bantuan lengkap.
 
 📊 Dashboard:
-${DASHBOARD_URL}`
-      )
-      return res.status(200).json({ ok: true })
-    }
+https://finance-tracker-gold-alpha.vercel.app`
+  )
+
+  return res.status(200).json({ ok: true })
+}
+
+if (text === '/help') {
+  await reply(
+    message.chat.id,
+    `📖 Panduan Penggunaan
+
+➕ Pemasukan:
++1000000 gaji 15 mei
+
+➖ Pengeluaran:
+-25000 bakso 16 mei
+
+📌 Command:
+• /saldo
+• /help
+• /start
+
+📊 Dashboard:
+https://finance-tracker-gold-alpha.vercel.app`
+  )
+
+  return res.status(200).json({ ok: true })
+}
+
+if (text === '/menu') {
+  await reply(
+    message.chat.id,
+    `📋 Menu Finance Tracker
+
+/start - Mulai bot
+/help - Bantuan
+/saldo - Lihat saldo
+
+📊 Dashboard:
+https://finance-tracker-gold-alpha.vercel.app`
+  )
+
+  return res.status(200).json({ ok: true })
+}
 
     if (text === '/saldo') {
       const { data, error } = await supabase.from('transactions').select('*')
