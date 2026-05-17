@@ -110,11 +110,17 @@ Command:
     }
 
     await reply(
-      message.chat.id,
-      `✅ Tersimpan
-${type === 'income' ? 'Pemasukan' : 'Pengeluaran'}: ${description}
-Nominal: Rp ${amount.toLocaleString('id-ID')}`
-    )
+  message.chat.id,
+  `✅ Tersimpan
+
+${type === 'income' ? '📈 Pemasukan' : '📉 Pengeluaran'}: ${description}
+
+💰 Nominal:
+Rp ${amount.toLocaleString('id-ID')}
+
+📊 Dashboard:
+https://finance-tracker-gold-alpha.vercel.app`
+)
 
     return res.status(200).json({ ok: true })
   } catch (error) {
