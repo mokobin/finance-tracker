@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
+const DASHBOARD_URL = 'https://finance-tracker-gold-alpha.vercel.app'
+
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.VITE_SUPABASE_ANON_KEY
@@ -27,7 +29,10 @@ Format input:
 
 Command:
 /saldo - Lihat saldo
-/help - Bantuan`
+/help - Bantuan
+
+📊 Dashboard:
+${DASHBOARD_URL}`
       )
       return res.status(200).json({ ok: true })
     }
@@ -56,7 +61,10 @@ Command:
 
 📈 Pemasukan: Rp ${income.toLocaleString('id-ID')}
 📉 Pengeluaran: Rp ${expense.toLocaleString('id-ID')}
-💳 Saldo: Rp ${balance.toLocaleString('id-ID')}`
+💳 Saldo: Rp ${balance.toLocaleString('id-ID')}
+
+📊 Dashboard:
+${DASHBOARD_URL}`
       )
 
       return res.status(200).json({ ok: true })
@@ -65,47 +73,51 @@ Command:
     if (!text.startsWith('+') && !text.startsWith('-')) {
       await reply(
         message.chat.id,
-        'Format harus diawali + atau -\n\nContoh:\n+35000000 uang koperasi 14 Mei\n-500000 mingguan Dika 15 Mei'
+        `Format harus diawali + atau -
+
+Contoh:
++35000000 uang koperasi 14 Mei
+-500000 mingguan Dika 15 Mei`
       )
       return res.status(200).json({ ok: true })
     }
 
     const type = text.startsWith('+') ? 'income' : 'expense'
-    const amountMatch = text.match(/\d+/)
-    const amount = amountMatch ? Number(amountMatch[0]) : 0
+    const amountMatch = text.match(/[+-]\s*(\d+)/)
+    const amount = amountMatch ? Number(amountMatch[1]) : 0
 
-    const cleanText = text.replace('+', '').replace('-', '').trim()
+    const transactionDate = extractDate(text)
+
+    const cleanText = text
+      .replace(/[+-]\s*\d+/, '')
+      .replace(/\b\d{1,2}\s+(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\b/gi, '')
+      .trim()
 
     const description = cleanText
-      .replace(/\d+/g, '')
-      .replace(
-        /\b(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\b/gi,
-        ''
-      )
-      .replace(/\b\d{1,2}\b/g, '')
-      .trim()
 
     if (!amount || !description) {
       await reply(
         message.chat.id,
-        'Format belum lengkap.\n\nContoh:\n+35000000 uang koperasi 14 Mei\n-500000 mingguan Dika 15 Mei'
+        `Format belum lengkap.
+
+Contoh:
++35000000 uang koperasi 14 Mei
+-500000 mingguan Dika 15 Mei`
       )
       return res.status(200).json({ ok: true })
     }
 
     const category = guessCategory(description, type)
 
-    const transactionDate = extractDate(text)
-
-const { error } = await supabase.from('transactions').insert({
-  type,
-  category,
-  description,
-  amount,
-  transaction_date: transactionDate,
-  source: 'telegram',
-  raw_message: text,
-})
+    const { error } = await supabase.from('transactions').insert({
+      type,
+      category,
+      description,
+      amount,
+      transaction_date: transactionDate,
+      source: 'telegram',
+      raw_message: text,
+    })
 
     if (error) {
       await reply(message.chat.id, `Gagal simpan: ${error.message}`)
@@ -113,21 +125,59 @@ const { error } = await supabase.from('transactions').insert({
     }
 
     await reply(
-  message.chat.id,
-  `💰 Saldo Saat Ini
+      message.chat.id,
+      `✅ Tersimpan
 
-📈 Pemasukan: Rp ${income.toLocaleString('id-ID')}
-📉 Pengeluaran: Rp ${expense.toLocaleString('id-ID')}
-💳 Saldo: Rp ${balance.toLocaleString('id-ID')}
+${type === 'income' ? '📈 Pemasukan' : '📉 Pengeluaran'}: ${description}
+💰 Nominal: Rp ${amount.toLocaleString('id-ID')}
+📅 Tanggal: ${formatDate(transactionDate)}
 
 📊 Dashboard:
-https://finance-tracker-gold-alpha.vercel.app`
-)
+${DASHBOARD_URL}`
+    )
 
     return res.status(200).json({ ok: true })
   } catch (error) {
     return res.status(200).json({ ok: false, error: error.message })
   }
+}
+
+function extractDate(text) {
+  const months = {
+    januari: 0,
+    februari: 1,
+    maret: 2,
+    april: 3,
+    mei: 4,
+    juni: 5,
+    juli: 6,
+    agustus: 7,
+    september: 8,
+    oktober: 9,
+    november: 10,
+    desember: 11,
+  }
+
+  const match = text.match(
+    /\b(\d{1,2})\s+(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\b/i
+  )
+
+  if (!match) return new Date().toISOString().split('T')[0]
+
+  const day = Number(match[1])
+  const month = months[match[2].toLowerCase()]
+  const year = new Date().getFullYear()
+
+  const date = new Date(year, month, day)
+  return date.toISOString().split('T')[0]
+}
+
+function formatDate(dateString) {
+  return new Date(dateString).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
 function guessCategory(text, type) {
@@ -151,36 +201,4 @@ async function reply(chatId, text) {
       text,
     }),
   })
-}
-function extractDate(text) {
-  const months = {
-    januari: 0,
-    februari: 1,
-    maret: 2,
-    april: 3,
-    mei: 4,
-    juni: 5,
-    juli: 6,
-    agustus: 7,
-    september: 8,
-    oktober: 9,
-    november: 10,
-    desember: 11,
-  }
-
-  const match = text.match(
-    /(\d{1,2})\s+(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)/i
-  )
-
-  if (!match) {
-    return new Date().toISOString().split('T')[0]
-  }
-
-  const day = parseInt(match[1])
-  const month = months[match[2].toLowerCase()]
-  const year = new Date().getFullYear()
-
-  const result = new Date(year, month, day)
-
-  return result.toISOString().split('T')[0]
 }
