@@ -111,12 +111,11 @@ Command:
 
     await reply(
   message.chat.id,
-  `✅ Tersimpan
+  `💰 Saldo Saat Ini
 
-${type === 'income' ? '📈 Pemasukan' : '📉 Pengeluaran'}: ${description}
-
-💰 Nominal:
-Rp ${amount.toLocaleString('id-ID')}
+📈 Pemasukan: Rp ${income.toLocaleString('id-ID')}
+📉 Pengeluaran: Rp ${expense.toLocaleString('id-ID')}
+💳 Saldo: Rp ${balance.toLocaleString('id-ID')}
 
 📊 Dashboard:
 https://finance-tracker-gold-alpha.vercel.app`
