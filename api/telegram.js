@@ -12,29 +12,86 @@ export default async function handler(req, res) {
 
   try {
     const message = req.body.message
-    const text = message?.text || ''
+    const text = message?.text?.trim() || ''
 
-    if (!text) {
+    if (!text) return res.status(200).json({ ok: true })
+
+    if (text === '/start' || text === '/menu' || text === '/help') {
+      await reply(
+        message.chat.id,
+        `🤖 Finance Tracker Bot
+
+Format input:
++35000000 uang koperasi 14 Mei
+-500000 mingguan Dika 15 Mei
+
+Command:
+/saldo - Lihat saldo
+/help - Bantuan`
+      )
       return res.status(200).json({ ok: true })
     }
 
-    const amountMatch = text.match(/\d+/g)
-    const amount = amountMatch ? Number(amountMatch.join('')) : 0
-    const description = text.replace(/[0-9.]/g, '').trim()
+    if (text === '/saldo') {
+      const { data, error } = await supabase.from('transactions').select('*')
+
+      if (error) {
+        await reply(message.chat.id, `Gagal ambil saldo: ${error.message}`)
+        return res.status(200).json({ ok: false })
+      }
+
+      const income = data
+        .filter((x) => x.type === 'income')
+        .reduce((a, b) => a + Number(b.amount), 0)
+
+      const expense = data
+        .filter((x) => x.type === 'expense')
+        .reduce((a, b) => a + Number(b.amount), 0)
+
+      const balance = income - expense
+
+      await reply(
+        message.chat.id,
+        `💰 Saldo Saat Ini
+
+📈 Pemasukan: Rp ${income.toLocaleString('id-ID')}
+📉 Pengeluaran: Rp ${expense.toLocaleString('id-ID')}
+💳 Saldo: Rp ${balance.toLocaleString('id-ID')}`
+      )
+
+      return res.status(200).json({ ok: true })
+    }
+
+    if (!text.startsWith('+') && !text.startsWith('-')) {
+      await reply(
+        message.chat.id,
+        'Format harus diawali + atau -\n\nContoh:\n+35000000 uang koperasi 14 Mei\n-500000 mingguan Dika 15 Mei'
+      )
+      return res.status(200).json({ ok: true })
+    }
+
+    const type = text.startsWith('+') ? 'income' : 'expense'
+    const amountMatch = text.match(/\d+/)
+    const amount = amountMatch ? Number(amountMatch[0]) : 0
+
+    const cleanText = text.replace('+', '').replace('-', '').trim()
+
+    const description = cleanText
+      .replace(/\d+/g, '')
+      .replace(
+        /\b(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\b/gi,
+        ''
+      )
+      .replace(/\b\d{1,2}\b/g, '')
+      .trim()
 
     if (!amount || !description) {
-      await reply(message.chat.id, 'Format: bakso 25000')
+      await reply(
+        message.chat.id,
+        'Format belum lengkap.\n\nContoh:\n+35000000 uang koperasi 14 Mei\n-500000 mingguan Dika 15 Mei'
+      )
       return res.status(200).json({ ok: true })
     }
-
-    const lower = text.toLowerCase()
-    const type =
-      lower.includes('gaji') ||
-      lower.includes('bonus') ||
-      lower.includes('income') ||
-      lower.includes('masuk')
-        ? 'income'
-        : 'expense'
 
     const category = guessCategory(description, type)
 
@@ -54,7 +111,9 @@ export default async function handler(req, res) {
 
     await reply(
       message.chat.id,
-      `✅ Tersimpan\n${type === 'income' ? 'Pemasukan' : 'Pengeluaran'}: ${description}\nNominal: Rp ${amount.toLocaleString('id-ID')}`
+      `✅ Tersimpan
+${type === 'income' ? 'Pemasukan' : 'Pengeluaran'}: ${description}
+Nominal: Rp ${amount.toLocaleString('id-ID')}`
     )
 
     return res.status(200).json({ ok: true })
@@ -70,6 +129,7 @@ function guessCategory(text, type) {
   if (value.includes('bakso') || value.includes('makan') || value.includes('kopi')) return 'makan'
   if (value.includes('bensin') || value.includes('grab') || value.includes('gojek')) return 'transport'
   if (value.includes('listrik') || value.includes('air') || value.includes('wifi')) return 'tagihan'
+  if (value.includes('mingguan')) return 'operasional'
 
   return 'lainnya'
 }
