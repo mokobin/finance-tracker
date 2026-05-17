@@ -167,6 +167,41 @@ https://finance-tracker-gold-alpha.vercel.app`
   return res.status(200).json({ ok: true })
 }
 
+if (text === '/delete') {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (error || !data.length) {
+    await reply(message.chat.id, 'Tidak ada transaksi untuk dihapus')
+    return res.status(200).json({ ok: false })
+  }
+
+  const lastTransaction = data[0]
+
+  const { error: deleteError } = await supabase
+    .from('transactions')
+    .delete()
+    .eq('id', lastTransaction.id)
+
+  if (deleteError) {
+    await reply(message.chat.id, 'Gagal menghapus transaksi')
+    return res.status(200).json({ ok: false })
+  }
+
+  await reply(
+    message.chat.id,
+    `🗑️ Transaksi berhasil dihapus
+
+${lastTransaction.description}
+Rp ${Number(lastTransaction.amount).toLocaleString('id-ID')}`
+  )
+
+  return res.status(200).json({ ok: true })
+}
+
     if (!text.startsWith('+') && !text.startsWith('-')) {
       await reply(
         message.chat.id,

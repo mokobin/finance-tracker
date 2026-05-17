@@ -52,6 +52,21 @@ function App() {
     if (!error) setTransactions(data)
   }
 
+  async function deleteTransaction(id) {
+    const confirmDelete = confirm('Hapus transaksi ini?')
+
+    if (!confirmDelete) return
+
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id)
+
+    if (error) return alert(error.message)
+
+    getTransactions()
+  }
+
   async function addTransaction(e) {
     e.preventDefault()
 
@@ -150,21 +165,40 @@ function App() {
             <h2>Riwayat Transaksi</h2>
 
             {transactions.map((item) => (
-              <div className="transaction" key={item.id}>
-                <div>
-                  <b>{item.category}</b>
-                  <p>{item.description || '-'}</p>
-                  <small style={{ color: '#64748b' }}>
-                    {formatDate(item.transaction_date)}
-                  </small>
-                </div>
+  <div className="transaction" key={item.id}>
+    <div>
+      <b>{item.category}</b>
+      <p>{item.description || '-'}</p>
+      <small style={{ color: '#64748b' }}>
+        {formatDate(item.transaction_date)}
+      </small>
+    </div>
 
-                <strong className={item.type}>
-                  {item.type === 'income' ? '+' : '-'} Rp{' '}
-                  {Number(item.amount).toLocaleString('id-ID')}
-                </strong>
-              </div>
-            ))}
+    <div style={{ textAlign: 'right' }}>
+      <strong className={item.type}>
+        {item.type === 'income' ? '+' : '-'} Rp{' '}
+        {Number(item.amount).toLocaleString('id-ID')}
+      </strong>
+
+      <br />
+
+      <button
+        onClick={() => deleteTransaction(item.id)}
+        style={{
+          marginTop: '8px',
+          background: '#ef4444',
+          color: 'white',
+          border: 'none',
+          padding: '6px 10px',
+          borderRadius: '8px',
+          cursor: 'pointer',
+        }}
+      >
+        Hapus
+      </button>
+    </div>
+  </div>
+))}
           </div>
         </section>
       </div>
