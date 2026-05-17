@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import './style.css'
 
-
 function formatDate(dateString) {
   if (!dateString) return '-'
 
@@ -47,6 +46,7 @@ function App() {
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
+      .order('transaction_date', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (!error) setTransactions(data)
@@ -61,6 +61,7 @@ function App() {
         category: form.category,
         description: form.description,
         amount: Number(form.amount),
+        transaction_date: new Date().toISOString().split('T')[0],
         source: 'web',
       },
     ])
@@ -151,13 +152,12 @@ function App() {
             {transactions.map((item) => (
               <div className="transaction" key={item.id}>
                 <div>
-  <b>{item.category}</b>
-
-  <p>{item.description || '-'}</p>
-
-  <small style={{ color: '#64748b' }}>
-  <small>{formatDate(item.transaction_date)}</small>
-</div>
+                  <b>{item.category}</b>
+                  <p>{item.description || '-'}</p>
+                  <small style={{ color: '#64748b' }}>
+                    {formatDate(item.transaction_date)}
+                  </small>
+                </div>
 
                 <strong className={item.type}>
                   {item.type === 'income' ? '+' : '-'} Rp{' '}
