@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import './style.css'
 
-export default App
+
 function formatDate(dateString) {
   const date = new Date(dateString)
   const today = new Date()
