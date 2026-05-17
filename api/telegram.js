@@ -110,6 +110,63 @@ ${DASHBOARD_URL}`
       return res.status(200).json({ ok: true })
     }
 
+if (text === '/today') {
+  const today = new Date().toISOString().split('T')[0]
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('transaction_date', today)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    await reply(message.chat.id, `Gagal ambil transaksi hari ini: ${error.message}`)
+    return res.status(200).json({ ok: false })
+  }
+
+  if (!data.length) {
+    await reply(
+      message.chat.id,
+      `📅 Hari ini belum ada transaksi.
+
+📊 Dashboard:
+https://finance-tracker-gold-alpha.vercel.app`
+    )
+    return res.status(200).json({ ok: true })
+  }
+
+  const income = data
+    .filter((x) => x.type === 'income')
+    .reduce((a, b) => a + Number(b.amount), 0)
+
+  const expense = data
+    .filter((x) => x.type === 'expense')
+    .reduce((a, b) => a + Number(b.amount), 0)
+
+  const list = data
+    .slice(0, 10)
+    .map((item, index) => {
+      const sign = item.type === 'income' ? '➕' : '➖'
+      return `${index + 1}. ${sign} ${item.description} - Rp ${Number(item.amount).toLocaleString('id-ID')}`
+    })
+    .join('\n')
+
+  await reply(
+    message.chat.id,
+    `📅 Transaksi Hari Ini
+
+${list}
+
+📈 Pemasukan: Rp ${income.toLocaleString('id-ID')}
+📉 Pengeluaran: Rp ${expense.toLocaleString('id-ID')}
+
+📊 Dashboard:
+https://finance-tracker-gold-alpha.vercel.app`
+  )
+
+  return res.status(200).json({ ok: true })
+}
+
     if (!text.startsWith('+') && !text.startsWith('-')) {
       await reply(
         message.chat.id,
