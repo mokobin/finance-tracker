@@ -95,14 +95,17 @@ Command:
 
     const category = guessCategory(description, type)
 
-    const { error } = await supabase.from('transactions').insert({
-      type,
-      category,
-      description,
-      amount,
-      source: 'telegram',
-      raw_message: text,
-    })
+    const transactionDate = extractDate(text)
+
+const { error } = await supabase.from('transactions').insert({
+  type,
+  category,
+  description,
+  amount,
+  transaction_date: transactionDate,
+  source: 'telegram',
+  raw_message: text,
+})
 
     if (error) {
       await reply(message.chat.id, `Gagal simpan: ${error.message}`)
@@ -148,4 +151,36 @@ async function reply(chatId, text) {
       text,
     }),
   })
+}
+function extractDate(text) {
+  const months = {
+    januari: 0,
+    februari: 1,
+    maret: 2,
+    april: 3,
+    mei: 4,
+    juni: 5,
+    juli: 6,
+    agustus: 7,
+    september: 8,
+    oktober: 9,
+    november: 10,
+    desember: 11,
+  }
+
+  const match = text.match(
+    /(\d{1,2})\s+(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)/i
+  )
+
+  if (!match) {
+    return new Date().toISOString().split('T')[0]
+  }
+
+  const day = parseInt(match[1])
+  const month = months[match[2].toLowerCase()]
+  const year = new Date().getFullYear()
+
+  const result = new Date(year, month, day)
+
+  return result.toISOString().split('T')[0]
 }

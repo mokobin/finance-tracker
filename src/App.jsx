@@ -2,6 +2,25 @@ import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import './style.css'
 
+export default App
+function formatDate(dateString) {
+  const date = new Date(dateString)
+  const today = new Date()
+
+  const diffTime = today - date
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return 'Hari ini'
+  if (diffDays === 1) return 'Kemarin'
+  if (diffDays === 2) return '2 hari lalu'
+
+  return date.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
 function App() {
   const [transactions, setTransactions] = useState([])
   const [form, setForm] = useState({
@@ -123,9 +142,14 @@ function App() {
             {transactions.map((item) => (
               <div className="transaction" key={item.id}>
                 <div>
-                  <b>{item.category}</b>
-                  <p>{item.description || '-'}</p>
-                </div>
+  <b>{item.category}</b>
+
+  <p>{item.description || '-'}</p>
+
+  <small style={{ color: '#64748b' }}>
+  {formatDate(item.created_at)}
+</small>
+</div>
 
                 <strong className={item.type}>
                   {item.type === 'income' ? '+' : '-'} Rp{' '}
