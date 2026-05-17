@@ -4,11 +4,20 @@ import './style.css'
 
 
 function formatDate(dateString) {
-  const date = new Date(dateString)
+  if (!dateString) return '-'
+
+  const date = new Date(dateString + 'T00:00:00')
   const today = new Date()
 
-  const diffTime = today - date
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  const cleanToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  )
+
+  const diffDays = Math.floor(
+    (cleanToday - date) / (1000 * 60 * 60 * 24)
+  )
 
   if (diffDays === 0) return 'Hari ini'
   if (diffDays === 1) return 'Kemarin'
@@ -147,8 +156,7 @@ function App() {
   <p>{item.description || '-'}</p>
 
   <small style={{ color: '#64748b' }}>
-  {formatDate(item.created_at)}
-</small>
+  <small>{formatDate(item.transaction_date)}</small>
 </div>
 
                 <strong className={item.type}>
